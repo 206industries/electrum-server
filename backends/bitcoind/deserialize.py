@@ -209,7 +209,7 @@ def short_hex(bytes):
     return t[0:4]+"..."+t[-4:]
 
 
-def parse_TxIn(vds):
+def parse_TxIn(vds, addrtype):
     d = {}
     d['prevout_hash'] = hash_encode(vds.read_bytes(32))
     d['prevout_n'] = vds.read_uint32()
@@ -217,7 +217,7 @@ def parse_TxIn(vds):
     d['sequence'] = vds.read_uint32()
 
     if scriptSig:
-        pubkeys, signatures, address = get_address_from_input_script(scriptSig)
+        pubkeys, signatures, address = get_address_from_input_script(scriptSig, addrtype)
     else:
         pubkeys = []
         signatures = []
@@ -229,30 +229,30 @@ def parse_TxIn(vds):
     return d
 
 
-def parse_TxOut(vds, i):
+def parse_TxOut(vds, i, addrtype):
     d = {}
     d['value'] = vds.read_int64()
     scriptPubKey = vds.read_bytes(vds.read_compact_size())
-    d['address'] = get_address_from_output_script(scriptPubKey)
+    d['address'] = get_address_from_output_script(scriptPubKey, addrtype)
     d['raw_output_script'] = scriptPubKey.encode('hex')
     d['index'] = i
     return d
 
 
-def parse_Transaction(vds, is_coinbase):
+def parse_Transaction(vds, is_coinbase, addrtype):
     d = {}
     start = vds.read_cursor
     d['version'] = vds.read_int32()
     n_vin = vds.read_compact_size()
     d['inputs'] = []
     for i in xrange(n_vin):
-            o = parse_TxIn(vds)
+            o = parse_TxIn(vds, addrtype)
             if not is_coinbase:
                     d['inputs'].append(o)
     n_vout = vds.read_compact_size()
     d['outputs'] = []
     for i in xrange(n_vout):
-            o = parse_TxOut(vds, i)
+            o = parse_TxOut(vds, i, addrtype)
 
             #if o['address'] == "None" and o['value']==0:
             #        print("skipping strange tx output with zero value")
@@ -345,7 +345,7 @@ def match_decoded(decoded, to_match):
 
 
 
-def get_address_from_input_script(bytes):
+def get_address_from_input_script(bytes, addrtype):
     try:
         decoded = [ x for x in script_GetOp(bytes) ]
     except:
@@ -358,7 +358,7 @@ def get_address_from_input_script(bytes):
 
     match = [ opcodes.OP_PUSHDATA4, opcodes.OP_PUSHDATA4 ]
     if match_decoded(decoded, match):
-        return None, None, public_key_to_bc_address(decoded[1][1])
+        return None, None, public_key_to_bc_address(decoded[1][1], addrtype)
 
     # p2sh transaction, 2 of n
     match = [ opcodes.OP_0 ]
@@ -387,7 +387,7 @@ def get_address_from_input_script(bytes):
     return [], [], None
 
 
-def get_address_from_output_script(bytes):
+def get_address_from_output_script(bytes, addrtype):
     try:
         decoded = [ x for x in script_GetOp(bytes) ]
     except:
@@ -397,7 +397,7 @@ def get_address_from_output_script(bytes):
     # 65 BYTES:... CHECKSIG
     match = [opcodes.OP_PUSHDATA4, opcodes.OP_CHECKSIG]
     if match_decoded(decoded, match):
-        return public_key_to_bc_address(decoded[0][1])
+        return public_key_to_bc_address(decoded[0][1], addrtype)
 
     # coins sent to black hole
     # DUP HASH160 20 BYTES:... EQUALVERIFY CHECKSIG

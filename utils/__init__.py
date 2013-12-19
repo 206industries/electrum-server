@@ -103,8 +103,8 @@ def hash_160(public_key):
         return md.digest()
 
 
-def public_key_to_bc_address(public_key):
-    return hash_160_to_bc_address(hash_160(public_key))
+def public_key_to_bc_address(public_key, addrtype = 0):
+    return hash_160_to_bc_address(hash_160(public_key), addrtype)
 
 
 def hash_160_to_bc_address(h160, addrtype = 0):
