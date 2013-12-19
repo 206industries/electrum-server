@@ -52,4 +52,4 @@ port = 8332
 # user and password from bitcoin.conf
 user = user
 password = password
-# testnet = 1
+# testnet = true

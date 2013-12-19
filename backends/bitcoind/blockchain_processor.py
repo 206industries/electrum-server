@@ -57,11 +57,7 @@ class BlockchainProcessor(Processor):
             config.get('bitcoind', 'password'),
             config.get('bitcoind', 'host'),
             config.get('bitcoind', 'port'))
-        self.testnet = config.getint('bitcoind', 'testnet')
-	if self.testnet == 1:
-            self.addrtype = 111
-        else:
-            self.addrtype = 0
+        self.testnet = config.getboolean('bitcoind', 'testnet')
 
 
         while True:
@@ -271,7 +267,7 @@ class BlockchainProcessor(Processor):
         vds = deserialize.BCDataStream()
         vds.write(raw_tx.decode('hex'))
         try:
-            return deserialize.parse_Transaction(vds, is_coinbase=False, addrtype=self.addrtype)
+            return deserialize.parse_Transaction(vds, is_coinbase=False, testnet=self.testnet)
         except:
             print_log("ERROR: cannot parse", txid)
             return None
@@ -477,7 +473,7 @@ class BlockchainProcessor(Processor):
             vds = deserialize.BCDataStream()
             vds.write(raw_tx.decode('hex'))
             try:
-                tx = deserialize.parse_Transaction(vds, is_coinbase, self.addrtype)
+                tx = deserialize.parse_Transaction(vds, is_coinbase, self.testnet)
             except:
                 print_log("ERROR: cannot parse", tx_hash)
                 continue
